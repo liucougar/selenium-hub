@@ -65,28 +65,42 @@ try{
 	}
 
 	if(!rc){
+		sys.puts("ERROR, no selenium-rc available");
 		simpleText(res, 404,"ERROR, no selenium-rc available");
 		return;
 	}
 	reqobj.rc=rc;
-	var client=http.createClient(rc.port,rc.host),
-	  request=client.request(req.method, req.url, req.headers);
+	var client=http.createClient(rc.port,rc.host);
+	//client.setTimeout(5000);
 	
+	var request=client.request(req.method, req.url, req.headers);
+	var timeout=setTimeout(function(){
+		//client.emit('timeout');
+		var err=new Error('Connection timeout');
+		err.errno=110;
+		client.emit('error',err);
+		client.destroy();
+	},1000);
 	//client._request=[_checkClientDriverReq,Array.prototype.concat.call([],arguments)];
+	client.addListener("connect",function(){
+		clearTimeout(timeout);
+	});
 	client.addListener("error",function(e){
 		sys.puts("Can't connect to "+rc.rc_key+" with Error "+e.message+" ("+e.errno+")");
 		if(!rc._retry){
 			rc._retry=0;
 		}
 		rc._retry++;
-		if(rc._retry>3){
+		if(rc._retry>=3){
 			sys.puts("Removing RC "+rc.rc_key);
-			pool.remove(rcrc_key);
+			pool.remove(rc.rc_key);
+			reqobj.rc=null;
 		}else{
 			sys.puts("Try to reconnect (attempt "+rc._retry+")");
 			//retry the current request
-			setTimeout(_checkClientDriverReq,500,req, reqobj, res);
+			//setTimeout(_checkClientDriverReq,500,req, reqobj, res);
 		}
+		setTimeout(_checkClientDriverReq,500,req, reqobj, res);
 	});
 	request.addListener("response", function (response) {
 		var resdata="";

@@ -79,7 +79,7 @@ PoolManager.prototype={
 	remove: function(rc_key){
 		//remove all sessions associated with this RC
 		this.sessions._clear();
-		this._map[rc_key].client.end();
+		//this._map[rc_key].client.end();
 		delete this._map[rc_key];
 	},
 	//SESSION related
