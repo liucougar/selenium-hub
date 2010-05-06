@@ -54,12 +54,27 @@ PoolManager.prototype={
 	get: function(id){
 		return this._map[k];
 	},
+	_checkRC: function(rc){
+		if(rc._state){
+			return true;
+		}else{
+			var t=+new Date;
+			if(t-rc._lastCheckTime>5000){
+				this.markAs(rc,1);
+				return true;
+			}
+			return false;
+		}
+	},
 	getRC: function(browserkey, lock){
-		var found;
+		var found, rc;
 		for(var k in this._map){
+			rc=this._map[k];
 			if(this._match(browserkey, this._map[k]) && (!lock || !this._locks[k] || this._locks[k].indexOf(lock)<0) ){
-				found=this._map[k];
-				break;
+				if(this._checkRC(rc)){
+					found=rc;
+					break;
+				}
 			}
 		}
 		if(found){
@@ -75,12 +90,24 @@ PoolManager.prototype={
 		}
 		this._map[key]=obj;
 		obj.rc_key=key;
+		this.markAs(obj,1);
+		//obj._state=1;
 	},
 	remove: function(rc_key){
 		//remove all sessions associated with this RC
 		this.sessions._clear();
 		//this._map[rc_key].client.end();
 		delete this._map[rc_key];
+	},
+	markAs: function(rc,state){
+		if(!state){	//not available
+			rc._state=0;
+			rc._lastCheckTime=+new Date;
+		}else{
+			rc._state=1;
+			delete rc._retry;
+			delete rc._lastCheckTime;
+		}
 	},
 	//SESSION related
 	addSession: function(id,rc_key,lock){
@@ -100,6 +127,7 @@ PoolManager.prototype={
 		return this.sessions.get(session_id);
 	},
 	removeSession: function(session_id){
+		sys.puts('removeSession: '+session_id);
 		var s=this.sessions.remove(session_id);
 		if(s){
 			if(s.lock){
@@ -112,5 +140,20 @@ PoolManager.prototype={
 				}
 			}
 		}
+	},
+	closeSession: function(session_id){
+		var session=this.getSession(session_id);
+		if(!session){
+			return;
+		}
+		var rc=session.rc, client=http.createClient(rc.port,rc.host),
+		  request=client.request('GET', "/selenium-server/driver/?cmd=testComplete&sessionId="+reqobj.sessionId);
+		request.addListener("response",function(response){
+			response.addListener("end",function(){
+				client.end();
+			});
+		});
+		request.end();
+		this.removeSession(session_id);
 	}
 }
