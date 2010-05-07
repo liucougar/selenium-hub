@@ -55,7 +55,7 @@ function _checkClientDriverReq(req, reqobj, res){
 				reqobj._rclock=args['lock'];
 				rc=pool.getRC(args['1'],reqobj._rclock);
 				reqobj._noWait=args['noWait'];
-		
+				sys.log("Assign RC "+rc.rc_key);
 				// sys.puts('getNewBrowserSession '+args['1']+" "+client);
 				break;
 			case 'testComplete':
