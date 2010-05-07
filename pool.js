@@ -146,13 +146,16 @@ PoolManager.prototype={
 		if(!session){
 			return;
 		}
+		var data="cmd=testComplete&sessionId="+session_id;
 		var rc=session.rc, client=http.createClient(rc.port,rc.host),
-		  request=client.request('GET', "/selenium-server/driver/?cmd=testComplete&sessionId="+reqobj.sessionId);
+		  request=client.request('POST', "/selenium-server/driver/",{"host":"127.0.0.1:4444","accept-encoding":"identity","content-length":data.length,"content-type":"application/x-www-form-urlencoded; charset=utf-8"});
 		request.addListener("response",function(response){
 			response.addListener("end",function(){
 				client.end();
 			});
 		});
+		//sys.puts('closeSession '+data+" "+data.length);
+		request.write(data);
 		request.end();
 		this.removeSession(session_id);
 	}

@@ -38,7 +38,7 @@ function simpleText(res, code, body) {
 
 function _checkClientDriverReq(req, reqobj, res){
 	if(req.connection.readyState!='open'){
-		sys.puts('Client driver droped: stop processing request "'+req.url+'" with POST data "'+reqobj.data+'"');
+		sys.log('Client driver droped: stop processing request "'+req.url+'" with POST data "'+reqobj.data+'"');
 		if(reqobj.sessionId){
 			pool.closeSession(reqobj.sessionId);
 		}
@@ -47,7 +47,7 @@ function _checkClientDriverReq(req, reqobj, res){
 	var rc;
 	if(reqobj && !reqobj.rc){
 		var args=_getArgs(req, reqobj.data);
-		sys.puts('_checkClientDriverReq '+args.cmd);
+		sys.log('ClientDriver Request: '+(args.sessionId||'')+' '+args.cmd);
 
 		switch(args.cmd){
 			case 'getNewBrowserSession':
@@ -60,7 +60,7 @@ function _checkClientDriverReq(req, reqobj, res){
 				break;
 			case 'testComplete':
 				reqobj.args=args;
-				//sys.puts('testComplete '+args.sessionId);
+				//sys.puts('testComplete '+JSON.stringify(req.headers)+" "+reqobj.data+" "+req.url);
 				// pass through
 			default:
 				if(args.sessionId){
@@ -175,6 +175,7 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 	}
 	if(req.connection.readyState!='open'){
 		//the client driver dropped, let's discard any session it was using
+		sys.puts('Client driver droped: stop processing request "'+req.url+'" with POST data "'+reqobj.data+'"');
 		if(reqobj.sessionId){
 			pool.closeSession(reqobj.sessionId);
 		}
