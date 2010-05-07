@@ -68,6 +68,8 @@ function _checkClientDriverReq(req, reqobj, res){
 					var s=pool.getSession(args.sessionId);
 					if(!s){
 						sys.puts('TODO: sessionId is unknown');
+						simpleText(res,200,"ERROR,sessionId is not recognized")
+						return;
 					}else{
 						rc = s.rc;
 					}
