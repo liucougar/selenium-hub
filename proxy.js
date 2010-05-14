@@ -152,6 +152,20 @@ function _parseRCResult(data){
 		throw Error(data);
 	}
 }
+//this function will be called with this as the session object
+function _closeSession(){
+	var data="cmd=testComplete&sessionId="+this.id;
+	var rc=this.rc, client=http.createClient(rc.port,rc.host),
+	  request=client.request('POST', "/selenium-server/driver/",{"host":rc.host+":"+rc.port,"accept-encoding":"identity","content-length":data.length,"content-type":"application/x-www-form-urlencoded; charset=utf-8"});
+	request.addListener("response",function(response){
+		response.addListener("end",function(){
+			client.end();
+		});
+	});
+	//sys.puts('closeSession '+data+" "+data.length);
+	request.write(data);
+	request.end();
+}
 function _inspectRCResponse(/*resp from RC*/response,/*body of the response data*/resdata,
   /*request obj*/reqobj, /*response to client driver*/res, /*request from client driver*/req){
 	var args=reqobj.args;
@@ -161,7 +175,7 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 			case 'getNewBrowserSession':
 				try{
 					var sId=_parseRCResult(resdata);
-					pool.addSession(sId,reqobj.rc.rc_key,reqobj._rclock);
+					pool.addSession(sId,reqobj.rc.rc_key,reqobj._rclock,_closeSession);
 					reqobj.sessionId=sId;
 					sys.puts('getNewBrowserSession '+sId);
 				}catch(e){
@@ -189,7 +203,7 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 		if(reqobj.sessionId){
 			pool.sessions.set(reqobj.sessionId,'lastChecked',+new Date);
 		}
-		res.writeHeader(response.statusCode, response.headers);
+		res.writeHead(response.statusCode, response.headers);
 		res.write(resdata);
 	}
 	res.end();

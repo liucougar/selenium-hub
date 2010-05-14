@@ -8,8 +8,8 @@ SessionManager.prototype={
 	get: function(id){
 		return this._sessions[id];
 	},
-	add: function(id,rc,lock){
-		this._sessions[id]={rc:rc,lock:lock,lastChecked:+new Date};
+	add: function(id,rc,lock,cleanupfunc){
+		this._sessions[id]={id:id,rc:rc,lock:lock,lastChecked:+new Date,cleanup:cleanupfunc};
 		if(!this._heartBeat){
 			var self=this;
 			this._heartBeat=setInterval(function(){self.heartBeat()},5000);
@@ -140,11 +140,11 @@ PoolManager.prototype={
 		rc._lastCheckTime=+new Date;
 	},
 	//SESSION related
-	addSession: function(id,rc_key,lock){
+	addSession: function(id,rc_key,lock,cleanupfunc){
 		if(!this._map[rc_key]){
 			throw Error('RC '+rc_key+" is not registered");
 		}
-		this.sessions.add(id,this._map[rc_key],lock);
+		this.sessions.add(id,this._map[rc_key],lock,cleanupfunc);
 		if(lock){
 			var la=this._locks[rc_key];
 			if(!la){
@@ -176,17 +176,10 @@ PoolManager.prototype={
 		if(!session){
 			return;
 		}
-		var data="cmd=testComplete&sessionId="+session_id;
-		var rc=session.rc, client=http.createClient(rc.port,rc.host),
-		  request=client.request('POST', "/selenium-server/driver/",{"host":"127.0.0.1:4444","accept-encoding":"identity","content-length":data.length,"content-type":"application/x-www-form-urlencoded; charset=utf-8"});
-		request.addListener("response",function(response){
-			response.addListener("end",function(){
-				client.end();
-			});
-		});
-		//sys.puts('closeSession '+data+" "+data.length);
-		request.write(data);
-		request.end();
+		if(session.cleanup){
+			session.cleanup();
+		}
+
 		this.removeSession(session_id);
 	}
 }
