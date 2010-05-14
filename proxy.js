@@ -133,6 +133,7 @@ function _checkClientDriverReq(req, reqobj, res){
 			resdata+=chunk;
 		});
 		response.addListener("end", function () {
+			pool.markAs(rc,1);
 			client._request=null;
 			_inspectRCResponse(response,resdata,reqobj,res,req);
 			client.end();
@@ -184,6 +185,10 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 			pool.closeSession(reqobj.sessionId);
 		}
 	}else{
+		//update session info
+		if(reqobj.sessionId){
+			pool.sessions.set(reqobj.sessionId,'lastChecked',+new Date);
+		}
 		res.writeHeader(response.statusCode, response.headers);
 		res.write(resdata);
 	}

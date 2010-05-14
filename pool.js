@@ -9,11 +9,40 @@ SessionManager.prototype={
 		return this._sessions[id];
 	},
 	add: function(id,rc,lock){
-		this._sessions[id]={rc:rc,lock:lock};
+		this._sessions[id]={rc:rc,lock:lock,lastChecked:+new Date};
+		if(!this._heartBeat){
+			var self=this;
+			this._heartBeat=setInterval(function(){self.heartBeat()},5000);
+		}
+	},
+	set: function(session,f,v){
+		if(typeof session=='string'){
+			session=this.get(session);
+		}
+		session[f]=v;
+	},
+	heartBeat: function(){
+		var cutoff=+new Date-60000; //1 min timeout
+		for(var id in this._sessions){
+			if(this._sessions[id].lastChecked<cutoff){
+				sys.puts('session timeout, closing');
+				this._pool.closeSession(id);
+				//this.remove(id);
+			}
+		}
 	},
 	remove: function(id){
 		var s=this._sessions[id];
 		delete this._sessions[id];
+		var empty=true;
+		for(var i in this._sessions){
+			empty=false;
+			break;
+		}
+		if(empty && this._heartBeat){
+			clearInterval(this._heartBeat);
+			this._heartBeat=null;
+		}
 		return s;
 	},
 	_clear: function(rc_key){
@@ -34,17 +63,20 @@ exports.PoolManager=PoolManager;
 
 PoolManager.prototype={
 	load: function(){
-		this.add({os:'win_xp',host:'192.168.1.61',port:4444,browsers:['*firefox','*iexplore']});
+		//this.add({os:'win_xp',host:'192.168.1.61',port:4444,browsers:['*firefox','*iexplore']});
+		this.add({os:'win_xp',host:'192.168.28.129',port:4444,browsers:['*firefox','*iexplore']});
 	},
 	_getKey: function(obj){
 		return obj.host+':'+obj.port;
 	},
 	_match: function(k, obj){
 		var ps=k.split('@');
-		if(ps.length==1 || obj.os.substr(0,ps[1].length)==ps[1]){
+		if(ps.length==1 || obj.os=='*' || obj.os.substr(0,ps[1].length)==ps[1]){
 			var i=0,b, targetb=ps[0];
 			while((b=obj.browsers[i++])){
-				if(b.substr(0,targetb.length)==targetb){
+				if(targetb.length<b.length?
+				  b.substr(0,targetb.length)==targetb :
+				  b==targetb.substr(0,b.length)){
 					return true;
 				}
 			}
@@ -91,7 +123,6 @@ PoolManager.prototype={
 		this._map[key]=obj;
 		obj.rc_key=key;
 		this.markAs(obj,1);
-		//obj._state=1;
 	},
 	remove: function(rc_key){
 		//remove all sessions associated with this RC
@@ -102,12 +133,11 @@ PoolManager.prototype={
 	markAs: function(rc,state){
 		if(!state){	//not available
 			rc._state=0;
-			rc._lastCheckTime=+new Date;
 		}else{
 			rc._state=1;
 			delete rc._retry;
-			delete rc._lastCheckTime;
 		}
+		rc._lastCheckTime=+new Date;
 	},
 	//SESSION related
 	addSession: function(id,rc_key,lock){
