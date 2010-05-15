@@ -1,6 +1,6 @@
 var http=require("http"), sys=require("sys"), parseUrl=require('url').parse,
   parseQuery=require('querystring').parse,
-  PoolManager=require("./pool").PoolManager;
+  config=require("./config"), PoolManager=require("./pool").PoolManager;
 
 var pool=new PoolManager();
 pool.load();
@@ -85,7 +85,7 @@ function _checkClientDriverReq(req, reqobj, res){
 				simpleText(res, 404,"ERROR, no selenium-rc available");
 			}else{
 				//retry after 1 second
-				setTimeout(_checkClientDriverReq,1000,req, reqobj, res);
+				setTimeout(_checkClientDriverReq,config.global.get("noRCRetryTimeout"),req, reqobj, res);
 			}
 			return;
 		}
@@ -104,7 +104,7 @@ function _checkClientDriverReq(req, reqobj, res){
 		err.errno=110;
 		client.emit('error',err);
 		client.destroy();
-	},1000);
+	},config.global.get("connectRCTimeout"));
 	//client._request=[_checkClientDriverReq,Array.prototype.concat.call([],arguments)];
 	client.addListener("connect",function(){
 		clearTimeout(timeout);
@@ -115,7 +115,7 @@ function _checkClientDriverReq(req, reqobj, res){
 			rc._retry=0;
 		}
 		rc._retry++;
-		if(rc._retry>=3){
+		if(rc._retry>=config.global.get("connectRCErrorRetry")){
 			sys.puts("Mark RC "+rc.rc_key+" as unavailable");
 			pool.markAs(rc,0);
 			//try to find a new one
@@ -125,7 +125,8 @@ function _checkClientDriverReq(req, reqobj, res){
 			//retry the current request
 			//setTimeout(_checkClientDriverReq,500,req, reqobj, res);
 		}
-		setTimeout(_checkClientDriverReq,500,req, reqobj, res);
+		
+		setTimeout(_checkClientDriverReq,config.global.get("connectRCErrorRetryInterval"),req, reqobj, res);
 	});
 	request.addListener("response", function (response) {
 		var resdata="";

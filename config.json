@@ -1,0 +1,22 @@
+{
+	"sessionTimeout": 60000,
+	"sessionTimeout.__doc__": "inactive session will be dropped after this timeout",
+	"sessionHearbeat": 5000,
+	"sessionHearbeat.__doc__": "how often to check all active sessions to see whether they timed out. changes to this option needs restart",
+	"retryDisconnectedRC": 5000,
+	"retryDisconnectedRC.__doc__": "after how many seconds, the hub should try to reconnect to disconnected RCs",
+	
+	"noRCRetryTimeout": 1000,
+	"noRCRetryTimeout.__doc__": "if there is no available RC, and client does not pass in noWait, how often the hub should retry to find an available RC",
+	"connectRCTimeout": 1000,
+	"connectRCTimeout.__doc__": "the maximum time allowed to establish connection to a RC",
+	"connectRCErrorRetry": 3,
+	"connectRCErrorRetry.__doc__": "if error happens on connection with RC, how many times to retry to reconnect",
+	"connectRCErrorRetryInterval": 1000,
+	"connectRCErrorRetryInterval.__doc__": "after how long hub should reconnect with a RC which just had a connection error",
+	
+	"remote-controls":[
+		{"os":"win_xp","host":"192.168.1.61","port":4444,"browsers":["*firefox","*iexplore"]},
+		{"os":"win_xp","host":"192.168.28.129","port":4444,"browsers":["*firefox","*iexplore"]}
+	]
+}

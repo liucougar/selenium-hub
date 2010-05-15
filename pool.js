@@ -1,4 +1,4 @@
-var sys=require("sys"), http=require("http");
+var sys=require("sys"), http=require("http"), config=require("config");
 
 var SessionManager=function(pool){
 	this._sessions={};
@@ -12,7 +12,7 @@ SessionManager.prototype={
 		this._sessions[id]={id:id,rc:rc,lock:lock,lastChecked:+new Date,cleanup:cleanupfunc};
 		if(!this._heartBeat){
 			var self=this;
-			this._heartBeat=setInterval(function(){self.heartBeat()},5000);
+			this._heartBeat=setInterval(function(){self.heartBeat()},config.global.get('sessionHearbeat'));
 		}
 	},
 	set: function(session,f,v){
@@ -22,7 +22,7 @@ SessionManager.prototype={
 		session[f]=v;
 	},
 	heartBeat: function(){
-		var cutoff=+new Date-60000; //1 min timeout
+		var cutoff=+new Date-config.global.get('sessionTimeout');
 		for(var id in this._sessions){
 			if(this._sessions[id].lastChecked<cutoff){
 				sys.puts('session timeout, closing');
@@ -63,8 +63,12 @@ exports.PoolManager=PoolManager;
 
 PoolManager.prototype={
 	load: function(){
+		var ls=config.global.get("remote-controls");
+		ls.forEach(function(r){
+			this.add(r);
+		},this);
 		//this.add({os:'win_xp',host:'192.168.1.61',port:4444,browsers:['*firefox','*iexplore']});
-		this.add({os:'win_xp',host:'192.168.28.129',port:4444,browsers:['*firefox','*iexplore']});
+		//this.add({os:'win_xp',host:'192.168.28.129',port:4444,browsers:['*firefox','*iexplore']});
 	},
 	_getKey: function(obj){
 		return obj.host+':'+obj.port;
@@ -91,7 +95,7 @@ PoolManager.prototype={
 			return true;
 		}else{
 			var t=+new Date;
-			if(t-rc._lastCheckTime>5000){
+			if(t-rc._lastCheckTime>config.global.get('retryDisconnectedRC')){
 				this.markAs(rc,1);
 				return true;
 			}
