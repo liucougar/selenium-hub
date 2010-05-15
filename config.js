@@ -6,12 +6,11 @@ var FileConfig=function(file,options){
 	this.loaded=content=JSON.parse(content);
 	//this.docs={};
 	
-	for(var i in content){
-		if(i.slice(-8)=='.__doc__'){
-			//Object.defineProperty(content,i,{value:content[i],enumerable:false,configurable:true});
-			//this.docs[i]=content[i];
-		}
-	}
+	// for(var i in content){
+		// if(i.slice(-8)=='.__doc__'){
+			// Object.defineProperty(content,i,{value:content[i],enumerable:false,configurable:true});
+		// }
+	// }
 	this.modified=Object.create(content);
 };
 exports.FileConfig=FileConfig;
