@@ -16,16 +16,21 @@ SessionManager.prototype={
 		}
 	},
 	set: function(session,f,v){
-		if(typeof session=='string'){
-			session=this.get(session);
+		var s=session;
+		if(typeof s=='string'){
+			s=this.get(session);
 		}
-		session[f]=v;
+		if(s){
+			s[f]=v;
+		}else{
+			sys.log('cant find session '+session);
+		}
 	},
 	heartBeat: function(){
 		var cutoff=+new Date-config.global.get('sessionTimeout');
 		for(var id in this._sessions){
 			if(this._sessions[id].lastChecked<cutoff){
-				sys.puts('session timeout, closing');
+				sys.puts('session timeout, closing '+cutoff+' '+this._sessions[id].lastChecked);
 				this._pool.closeSession(id);
 				//this.remove(id);
 			}

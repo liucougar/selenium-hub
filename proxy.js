@@ -171,6 +171,13 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
   /*request obj*/reqobj, /*response to client driver*/res, /*request from client driver*/req){
 	var args=reqobj.args;
 
+	//sometimes, some commands would return lower case ok, let's convert them to upper case OK
+	resdata = resdata.replace(/^ok/,'OK')
+	
+	if(!resdata.length){
+		sys.log('Empty response, treat as OK');
+		resdata='OK';
+	}
 	if(args){
 		switch(args.cmd){
 			case 'getNewBrowserSession':
