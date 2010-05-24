@@ -110,6 +110,13 @@ function _checkClientDriverReq(req, reqobj, res){
 		clearTimeout(timeout);
 	});
 	client.addListener("error",function(e){
+        //a client may trigger several error events, we only care about the first error
+        //because we create a new client each time
+        if(!client._errorOccured){
+            client._errorOccured=true;
+        }else{
+            return;
+        }
 		sys.puts("Can't connect to "+rc.rc_key+" with Error "+e.message+" ("+e.errno+")");
 		if(!rc._retry){
 			rc._retry=0;
