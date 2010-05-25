@@ -30,7 +30,7 @@ SessionManager.prototype={
 		var cutoff=+new Date-config.global.get('sessionTimeout');
 		for(var id in this._sessions){
 			if(this._sessions[id].lastChecked<cutoff){
-				sys.puts('session timeout, closing '+cutoff+' '+this._sessions[id].lastChecked);
+                sys.puts('session timeout, closing '+(new Date)+' '+new Date(this._sessions[id].lastChecked));
 				this._pool.closeSession(id);
 				//this.remove(id);
 			}
@@ -63,6 +63,7 @@ var PoolManager=function(){
 	this.sessions=new SessionManager(this);
 	this._map={};
 	this._locks={};
+    this._pendinglocks={};
 }
 exports.PoolManager=PoolManager;
 
@@ -111,8 +112,16 @@ PoolManager.prototype={
 		var found, rc;
 		for(var k in this._map){
 			rc=this._map[k];
-			if(this._match(browserkey, this._map[k]) && (!lock || !this._locks[k] || this._locks[k].indexOf(lock)<0) ){
+			if(this._match(browserkey, this._map[k]) && (!lock || 
+                ( (!this._locks[k] || this._locks[k].indexOf(lock)<0) &&
+                (!this._pendinglocks[k] || this._pendinglocks[k].indexOf(lock)<0)) ) ){
 				if(this._checkRC(rc)){
+                    if(lock){
+                        if(!this._pendinglocks[k]){
+                            this._pendinglocks[k]=[];
+                        }
+                        this._pendinglocks[k].push(lock);
+                    }
 					found=rc;
 					break;
 				}
@@ -123,6 +132,17 @@ PoolManager.prototype={
 		}
 		//return this._map[key];
 	},
+	clear: function(rc, lock){
+        var k=rc.rc_key;
+        if(lock){
+            var la=this._pendinglocks[k], i=la.indexOf(lock);
+            if(i<0){
+                sys.log("ERROR: no pending lock is found for lock "+lock);
+                return;
+            }
+            la.splice(i,1);
+        }
+    },
 	add: function(obj,old){
 		var key=this._getKey(obj);
 		if(this._map[key]){
@@ -160,6 +180,9 @@ PoolManager.prototype={
 				this._locks[rc_key]=la=[];
 			}
 			la.push(lock);
+            
+            la=this._pendinglocks[rc_key];
+            la.splice(la.indexOf(lock),1);
 		}
 	},
 	getSession: function(session_id){
@@ -170,7 +193,7 @@ PoolManager.prototype={
 		var s=this.sessions.remove(session_id);
 		if(s){
 			if(s.lock){
-				var la=this._locks[client];
+                var la=this._locks[s.rc.rc_key];
 				if(la){
 					var i=la.indexOf(s.lock);
 					if(i>=0){

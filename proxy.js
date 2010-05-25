@@ -112,11 +112,10 @@ function _checkClientDriverReq(req, reqobj, res){
 	client.addListener("error",function(e){
         //a client may trigger several error events, we only care about the first error
         //because we create a new client each time
-        if(!client._errorOccured){
-            client._errorOccured=true;
-        }else{
+        if(client._errorOccured){
             return;
         }
+        client._errorOccured=true;
 		sys.puts("Can't connect to "+rc.rc_key+" with Error "+e.message+" ("+e.errno+")");
 		if(!rc._retry){
 			rc._retry=0;
@@ -126,6 +125,7 @@ function _checkClientDriverReq(req, reqobj, res){
 			sys.puts("Mark RC "+rc.rc_key+" as unavailable");
 			pool.markAs(rc,0);
 			//try to find a new one
+			pool.clear(rc,reqobj._rclock);
 			reqobj.rc=null;
 		}else{
 			sys.puts("Try to reconnect (attempt "+rc._retry+")");
