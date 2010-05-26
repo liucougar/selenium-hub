@@ -108,13 +108,26 @@ PoolManager.prototype={
 			return false;
 		}
 	},
+	_isLocked: function(lock,rc){
+        var k=rc.rc_key;
+        //lock "focus" is special: if a session already holds a focus lock,
+        //no sessions will be created in that RC until the session terminates
+        if((this._locks[k] && this._locks[k].indexOf("focus")>=0) ||
+          (this._pendinglocks[k] && this._pendinglocks[k].indexOf("focus")>=0)){
+            return true;
+        }
+        if(!lock || 
+           ( (!this._locks[k] || this._locks[k].indexOf(lock)<0) &&
+           (!this._pendinglocks[k] || this._pendinglocks[k].indexOf(lock)<0)) ){
+            return false;
+        }
+        return true;
+    },
 	getRC: function(browserkey, lock){
 		var found, rc;
 		for(var k in this._map){
 			rc=this._map[k];
-			if(this._match(browserkey, this._map[k]) && (!lock || 
-                ( (!this._locks[k] || this._locks[k].indexOf(lock)<0) &&
-                (!this._pendinglocks[k] || this._pendinglocks[k].indexOf(lock)<0)) ) ){
+			if(this._match(browserkey, rc) && !this._isLocked(lock,rc) ){
 				if(this._checkRC(rc)){
                     if(lock){
                         if(!this._pendinglocks[k]){

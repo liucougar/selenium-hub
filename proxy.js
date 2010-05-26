@@ -56,7 +56,7 @@ function _checkClientDriverReq(req, reqobj, res){
 				rc=pool.getRC(args['1'],reqobj._rclock);
 				reqobj._noWait=args['noWait'];
 				if(rc){
-					sys.log("Assign RC "+rc.rc_key);
+					sys.log("Assign RC "+rc.rc_key+" "+reqobj._rclock);
 				}
 				// sys.puts('getNewBrowserSession '+args['1']+" "+client);
 				break;
@@ -179,10 +179,12 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 	var args=reqobj.args;
 
 	//sometimes, some commands would return lower case ok, let's convert them to upper case OK
-	resdata = resdata.replace(/^ok/,'OK')
-	
+	if(resdata=="ok"){
+        sys.log('ok response, treated as OK');
+        resdata="OK";
+    }
 	if(!resdata.length){
-		sys.log('Empty response, treat as OK');
+		sys.log('Empty response, treated as OK');
 		resdata='OK';
 	}
 	if(args){
