@@ -7,11 +7,11 @@ config.global = new config.FileConfig("./config.json");
 var proxy=require("./proxy");
 
 http.createServer(function(req,res){
-	try{
+	//try{
 		if(req.url.substr(0,17)=='/selenium-server/'){
 			proxy.passThrough(req,res);
 		}else{ //hub request
 			sys.puts('hub request '+req.method+" "+req.url);
 		}
-	}catch(e){sys.puts('error: '+e)}
+	//}catch(e){sys.log('error: '+e)}
 }).listen(4444);

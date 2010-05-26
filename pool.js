@@ -10,7 +10,7 @@ SessionManager.prototype={
 	},
 	add: function(id,rc,lock,cleanupfunc){
 		this._sessions[id]={id:id,rc:rc,lock:lock,lastChecked:+new Date,cleanup:cleanupfunc};
-		if(!this._heartBeat){
+		if(this._pool && !this._heartBeat){
 			var self=this;
 			this._heartBeat=setInterval(function(){self.heartBeat()},config.global.get('sessionHearbeat'));
 		}
@@ -39,15 +39,13 @@ SessionManager.prototype={
 	remove: function(id){
 		var s=this._sessions[id];
 		delete this._sessions[id];
-		var empty=true;
-		for(var i in this._sessions){
-			empty=false;
-			break;
-		}
-		if(empty && this._heartBeat){
-			clearInterval(this._heartBeat);
-			this._heartBeat=null;
-		}
+        if(this._pool){
+            var empty=!Object.keys(this._sessions).length;
+            if(empty && this._heartBeat){
+                clearInterval(this._heartBeat);
+                this._heartBeat=null;
+            }
+        }
 		return s;
 	},
 	_clear: function(rc_key){
@@ -61,6 +59,7 @@ SessionManager.prototype={
 
 var PoolManager=function(){
 	this.sessions=new SessionManager(this);
+    this.pending=new SessionManager();
 	this._map={};
 	this._locks={};
     this._pendinglocks={};
@@ -129,12 +128,6 @@ PoolManager.prototype={
 			rc=this._map[k];
 			if(this._match(browserkey, rc) && !this._isLocked(lock,rc) ){
 				if(this._checkRC(rc)){
-                    if(lock){
-                        if(!this._pendinglocks[k]){
-                            this._pendinglocks[k]=[];
-                        }
-                        this._pendinglocks[k].push(lock);
-                    }
 					found=rc;
 					break;
 				}
@@ -145,17 +138,17 @@ PoolManager.prototype={
 		}
 		//return this._map[key];
 	},
-	clear: function(rc, lock){
-        var k=rc.rc_key;
-        if(lock){
-            var la=this._pendinglocks[k], i=la.indexOf(lock);
-            if(i<0){
-                sys.log("ERROR: no pending lock is found for lock "+lock);
-                return;
-            }
-            la.splice(i,1);
-        }
-    },
+//  clear: function(rc, lock){
+//         var k=rc.rc_key;
+//         if(lock){
+//             var la=this._pendinglocks[k], i=la.indexOf(lock);
+//             if(i<0){
+//                 sys.log("ERROR: no pending lock is found for lock "+lock);
+//                 return;
+//             }
+//             la.splice(i,1);
+//         }
+//     },
 	add: function(obj,old){
 		var key=this._getKey(obj);
 		if(this._map[key]){
@@ -184,7 +177,7 @@ PoolManager.prototype={
 	//SESSION related
 	addSession: function(id,rc_key,lock,cleanupfunc){
 		if(!this._map[rc_key]){
-			throw Error('RC '+rc_key+" is not registered");
+			throw Error('PoolManager::addSession: RC '+rc_key+" is not registered");
 		}
 		this.sessions.add(id,this._map[rc_key],lock,cleanupfunc);
 		if(lock){
@@ -193,11 +186,25 @@ PoolManager.prototype={
 				this._locks[rc_key]=la=[];
 			}
 			la.push(lock);
-            
-            la=this._pendinglocks[rc_key];
-            la.splice(la.indexOf(lock),1);
 		}
 	},
+	pendingID: -1,
+	//signature is different from addSession: addPending lacks id argument, instead this will return a fake id
+    addPending: function(rc_key,lock,cleanupfunc){
+        if(!this._map[rc_key]){
+            throw Error('PoolManager::addPending: RC '+rc_key+" is not registered");
+        }
+        var assignedid=this.pendingID--;
+        this.pending.add(assignedid,this._map[rc_key],lock,cleanupfunc);
+        if(lock){
+            var la=this._pendinglocks[rc_key];
+            if(!la){
+                this._pendinglocks[rc_key]=la=[];
+            }
+            la.push(lock);
+        }
+        return assignedid;
+    },
 	getSession: function(session_id){
 		return this.sessions.get(session_id);
 	},
@@ -215,7 +222,24 @@ PoolManager.prototype={
 				}
 			}
 		}
+		return s;
 	},
+	removePending: function(session_id){
+        sys.puts('removePending: '+session_id);
+        var s=this.sessions.remove(session_id);
+        if(s){
+            if(s.lock){
+                var la=this._pendinglocks[s.rc.rc_key];
+                if(la){
+                    var i=la.indexOf(s.lock);
+                    if(i>=0){
+                        la.splice(i,1);
+                    }
+                }
+            }
+        }
+        return s;
+    },
 	closeSession: function(session_id){
 		var session=this.getSession(session_id);
 		if(!session){

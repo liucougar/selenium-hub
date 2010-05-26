@@ -56,7 +56,8 @@ function _checkClientDriverReq(req, reqobj, res){
 				rc=pool.getRC(args['1'],reqobj._rclock);
 				reqobj._noWait=args['noWait'];
 				if(rc){
-					sys.log("Assign RC "+rc.rc_key+" "+reqobj._rclock);
+                    reqobj.tempSessionID=pool.addPending(rc.rc_key,reqobj._rclock,_closeSession);
+					sys.log("Assign RC "+rc.rc_key+" "+(reqobj._rclock||""));
 				}
 				// sys.puts('getNewBrowserSession '+args['1']+" "+client);
 				break;
@@ -124,8 +125,12 @@ function _checkClientDriverReq(req, reqobj, res){
 		if(rc._retry>=config.global.get("connectRCErrorRetry")){
 			sys.puts("Mark RC "+rc.rc_key+" as unavailable");
 			pool.markAs(rc,0);
-			//try to find a new one
-			pool.clear(rc,reqobj._rclock);
+            if(reqobj.tempSessionID){
+                pool.removePending(reqobj.tempSessionID);
+                delete reqobj.tempSessionID;
+            }
+			//pool.clear(rc,reqobj._rclock);
+            //try to find a new RC
 			reqobj.rc=null;
 		}else{
 			sys.puts("Try to reconnect (attempt "+rc._retry+")");
@@ -192,11 +197,15 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 			case 'getNewBrowserSession':
 				try{
 					var sId=_parseRCResult(resdata);
+                    if(reqobj.tempSessionID){
+                        pool.removePending(reqobj.tempSessionID);
+                        delete reqobj.tempSessionID;
+                    }
 					pool.addSession(sId,reqobj.rc.rc_key,reqobj._rclock,_closeSession);
 					reqobj.sessionId=sId;
-					sys.puts('getNewBrowserSession '+sId);
+					sys.log('getNewBrowserSession '+sId);
 				}catch(e){
-					sys.puts('getNewBrowserSession failed '+e.message);
+					sys.log('getNewBrowserSession failed '+e.message);
 				}
 				break;
 			case 'testComplete':
