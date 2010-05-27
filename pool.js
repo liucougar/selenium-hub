@@ -209,7 +209,7 @@ PoolManager.prototype={
 		return this.sessions.get(session_id);
 	},
 	removeSession: function(session_id){
-		sys.puts('removeSession: '+session_id);
+		sys.log('removeSession: '+session_id);
 		var s=this.sessions.remove(session_id);
 		if(s){
 			if(s.lock){
@@ -225,8 +225,8 @@ PoolManager.prototype={
 		return s;
 	},
 	removePending: function(session_id){
-        sys.puts('removePending: '+session_id);
-        var s=this.sessions.remove(session_id);
+        sys.log('removePending: '+session_id);
+        var s=this.pending.remove(session_id);
         if(s){
             if(s.lock){
                 var la=this._pendinglocks[s.rc.rc_key];

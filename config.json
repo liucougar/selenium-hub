@@ -16,7 +16,6 @@
 	"connectRCErrorRetryInterval.__doc__": "after how long hub should reconnect with a RC which just had a connection error",
 	
 	"remote-controls":[
-		{"os":"win_xp","host":"192.168.1.61","port":4444,"browsers":["*firefox","*iexplore"]},
 		{"os":"win_xp","host":"192.168.28.129","port":4444,"browsers":["*firefox","*iexplore"]}
 	]
 }
