@@ -130,8 +130,15 @@ function _checkClientDriverReq(req, reqobj, res){
                 delete reqobj.tempSessionID;
             }
 			//pool.clear(rc,reqobj._rclock);
-            //try to find a new RC
-			reqobj.rc=null;
+            //try to find a new RC if user is requesting for a new browser session
+            if(reqobj.args && reqobj.args.cmd=='getNewBrowserSession'){
+                reqobj.rc=null;
+            }else{
+                res.writeHead(200);
+                res.write("ERROR,connect to RC on "+rc.rd_key+" is lost.");
+                res.end();
+                return;
+            }
 		}else{
 			sys.puts("Try to reconnect (attempt "+rc._retry+")");
 			//retry the current request
