@@ -60,6 +60,7 @@ SessionManager.prototype={
 var PoolManager=function(){
 	this.sessions=new SessionManager(this);
     this.pending=new SessionManager();
+    this.schedular=new RCScheduleQueue();
 	this._map={};
 	this._locks={};
     this._pendinglocks={};
@@ -158,6 +159,7 @@ PoolManager.prototype={
 		this._map[key]=obj;
 		obj.rc_key=key;
 		this.markAs(obj,1);
+        this.schedular.run();
 	},
 	remove: function(rc_key){
 		//remove all sessions associated with this RC
@@ -222,6 +224,7 @@ PoolManager.prototype={
 				}
 			}
 		}
+		this.schedular.run();
 		return s;
 	},
 	removePending: function(session_id){
@@ -251,4 +254,24 @@ PoolManager.prototype={
 
 		this.removeSession(session_id);
 	}
+}
+
+var RCScheduleQueue=function(){
+    this._queue=[];
+}
+RCScheduleQueue.prototype={
+    add: function(/*Function*/o){
+        this._queue.push(o);
+    },
+    run: function(){
+        var i=0,it, q=this._queue;
+        this._queue=[];
+        while((it=q[i++])){
+            try{
+                it();
+            }catch(e){
+                sys.log("RCScheduleQueue::run: ERROR "+e.message);
+            }
+        }
+    }
 }

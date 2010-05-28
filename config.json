@@ -6,8 +6,6 @@
 	"retryDisconnectedRC": 5000,
 	"retryDisconnectedRC.__doc__": "after how many seconds, the hub should try to reconnect to disconnected RCs",
 	
-	"noRCRetryTimeout": 1000,
-	"noRCRetryTimeout.__doc__": "if there is no available RC, and client does not pass in noWait, how often the hub should retry to find an available RC",
 	"connectRCTimeout": 1000,
 	"connectRCTimeout.__doc__": "the maximum time allowed to establish connection to a RC",
 	"connectRCErrorRetry": 3,

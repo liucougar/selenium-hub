@@ -44,7 +44,11 @@ function _checkClientDriverReq(req, reqobj, res){
 		}
 		return;
 	}
-	var rc;
+	
+	var rc, retryhandler=function(){
+        _checkClientDriverReq(req, reqobj, res);
+    };
+    
 	if(reqobj && !reqobj.rc){
 		var args=_getArgs(req, reqobj.data);
 		sys.log('ClientDriver Request: '+(args.sessionId||'')+' '+args.cmd);
@@ -86,7 +90,7 @@ function _checkClientDriverReq(req, reqobj, res){
 				simpleText(res, 404,"ERROR, no selenium-rc available");
 			}else{
 				//retry after 1 second
-				setTimeout(_checkClientDriverReq,config.global.get("noRCRetryTimeout"),req, reqobj, res);
+                pool.scheduler.add(retryhandler);
 			}
 			return;
 		}
@@ -133,19 +137,16 @@ function _checkClientDriverReq(req, reqobj, res){
             //try to find a new RC if user is requesting for a new browser session
             if(reqobj.args && reqobj.args.cmd=='getNewBrowserSession'){
                 reqobj.rc=null;
+                pool.scheduler.add(retryhandler);
             }else{
                 res.writeHead(200);
                 res.write("ERROR,connect to RC on "+rc.rd_key+" is lost.");
                 res.end();
-                return;
             }
 		}else{
 			sys.puts("Try to reconnect (attempt "+rc._retry+")");
-			//retry the current request
-			//setTimeout(_checkClientDriverReq,500,req, reqobj, res);
+            setTimeout(retryhandler,config.global.get("connectRCErrorRetryInterval"));
 		}
-		
-		setTimeout(_checkClientDriverReq,config.global.get("connectRCErrorRetryInterval"),req, reqobj, res);
 	});
 	request.addListener("response", function (response) {
 		var resdata="";
