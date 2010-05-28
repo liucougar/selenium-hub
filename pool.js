@@ -6,20 +6,20 @@ var SessionManager=function(pool){
 }
 SessionManager.prototype={
 	get: function(arg){
-        if(arg.rc_key){
-            //return all sessions IDs on RC specified by rc_key
-            var i=0,s,r=[];
-            for(i in this._sessions){
-                s=this._sessions[i];
-                if(s.rc.rc_key==arg.rc_key){
-                    r.push(s.id);
-                }
-            }
-            return r;
-        }else{
-            //arg is an ID of a session
-            return this._sessions[arg];
-        }
+		if(arg.rc_key){
+			//return all sessions IDs on RC specified by rc_key
+			var i=0,s,r=[];
+			for(i in this._sessions){
+				s=this._sessions[i];
+				if(s.rc.rc_key==arg.rc_key){
+					r.push(s.id);
+				}
+			}
+			return r;
+		}else{
+			//arg is an ID of a session
+			return this._sessions[arg];
+		}
 	},
 	add: function(id,rc,lock,cleanupfunc){
 		this._sessions[id]={id:id,rc:rc,lock:lock,lastChecked:+new Date,cleanup:cleanupfunc};
@@ -43,7 +43,7 @@ SessionManager.prototype={
 		var cutoff=+new Date-config.global.get('sessionTimeout');
 		for(var id in this._sessions){
 			if(this._sessions[id].lastChecked<cutoff){
-                sys.puts('session timeout, closing '+(new Date)+' '+new Date(this._sessions[id].lastChecked));
+				sys.puts('session timeout, closing '+(new Date)+' '+new Date(this._sessions[id].lastChecked));
 				this._pool.closeSession(id);
 				//this.remove(id);
 			}
@@ -52,13 +52,13 @@ SessionManager.prototype={
 	remove: function(id){
 		var s=this._sessions[id];
 		delete this._sessions[id];
-        if(this._pool){
-            var empty=!Object.keys(this._sessions).length;
-            if(empty && this._heartBeat){
-                clearInterval(this._heartBeat);
-                this._heartBeat=null;
-            }
-        }
+		if(this._pool){
+			var empty=!Object.keys(this._sessions).length;
+			if(empty && this._heartBeat){
+				clearInterval(this._heartBeat);
+				this._heartBeat=null;
+			}
+		}
 		return s;
 	},
 	_clear: function(rc_key){
@@ -72,11 +72,11 @@ SessionManager.prototype={
 
 var PoolManager=function(){
 	this.sessions=new SessionManager(this);
-    this.pending=new SessionManager();
-    this.schedular=new RCScheduleQueue();
+	this.pending=new SessionManager();
+	this.schedular=new RCScheduleQueue();
 	this._map={};
 	this._locks={};
-    this._pendinglocks={};
+	this._pendinglocks={};
 }
 exports.PoolManager=PoolManager;
 
@@ -122,27 +122,27 @@ PoolManager.prototype={
 		}
 	},
 	_isLocked: function(lock,rc){
-        var k=rc.rc_key;
-        //lock "focus" is special: if a session already holds a focus lock,
-        //no sessions will be created in that RC until the session terminates
-        if((this._locks[k] && this._locks[k].indexOf("focus")>=0) ||
-          (this._pendinglocks[k] && this._pendinglocks[k].indexOf("focus")>=0)){
-            return true;
-        }
-        //in addition, if a RC has at least one active browser session running,
-        //this RC can't handle "focus" lock
-        if(lock=='focus'){
-            if(pool.sessions.get({rc_key:rc.rc_key}).length || pool.pending.get({rc_key:rc.rc_key}).length){
-                return true;
-            }
-        }
-        if(!lock || 
-           ( (!this._locks[k] || this._locks[k].indexOf(lock)<0) &&
-           (!this._pendinglocks[k] || this._pendinglocks[k].indexOf(lock)<0)) ){
-            return false;
-        }
-        return true;
-    },
+		var k=rc.rc_key;
+		//lock "focus" is special: if a session already holds a focus lock,
+		//no sessions will be created in that RC until the session terminates
+		if((this._locks[k] && this._locks[k].indexOf("focus")>=0) ||
+		  (this._pendinglocks[k] && this._pendinglocks[k].indexOf("focus")>=0)){
+			return true;
+		}
+		//in addition, if a RC has at least one active browser session running,
+		//this RC can't handle "focus" lock
+		if(lock=='focus'){
+			if(pool.sessions.get({rc_key:rc.rc_key}).length || pool.pending.get({rc_key:rc.rc_key}).length){
+				return true;
+			}
+		}
+		if(!lock || 
+		   ( (!this._locks[k] || this._locks[k].indexOf(lock)<0) &&
+		   (!this._pendinglocks[k] || this._pendinglocks[k].indexOf(lock)<0)) ){
+			return false;
+		}
+		return true;
+	},
 	getRC: function(browserkey, lock){
 		var found, rc;
 		for(var k in this._map){
@@ -160,16 +160,16 @@ PoolManager.prototype={
 		//return this._map[key];
 	},
 //  clear: function(rc, lock){
-//         var k=rc.rc_key;
-//         if(lock){
-//             var la=this._pendinglocks[k], i=la.indexOf(lock);
-//             if(i<0){
-//                 sys.log("ERROR: no pending lock is found for lock "+lock);
-//                 return;
-//             }
-//             la.splice(i,1);
-//         }
-//     },
+//		 var k=rc.rc_key;
+//		 if(lock){
+//			 var la=this._pendinglocks[k], i=la.indexOf(lock);
+//			 if(i<0){
+//				 sys.log("ERROR: no pending lock is found for lock "+lock);
+//				 return;
+//			 }
+//			 la.splice(i,1);
+//		 }
+//	 },
 	add: function(obj,old){
 		var key=this._getKey(obj);
 		if(this._map[key]){
@@ -179,7 +179,7 @@ PoolManager.prototype={
 		this._map[key]=obj;
 		obj.rc_key=key;
 		this.markAs(obj,1);
-        this.schedular.run();
+		this.schedular.run();
 	},
 	remove: function(rc_key){
 		//remove all sessions associated with this RC
@@ -212,21 +212,21 @@ PoolManager.prototype={
 	},
 	pendingID: -1,
 	//signature is different from addSession: addPending lacks id argument, instead this will return a fake id
-    addPending: function(rc_key,lock,cleanupfunc){
-        if(!this._map[rc_key]){
-            throw Error('PoolManager::addPending: RC '+rc_key+" is not registered");
-        }
-        var assignedid=this.pendingID--;
-        this.pending.add(assignedid,this._map[rc_key],lock,cleanupfunc);
-        if(lock){
-            var la=this._pendinglocks[rc_key];
-            if(!la){
-                this._pendinglocks[rc_key]=la=[];
-            }
-            la.push(lock);
-        }
-        return assignedid;
-    },
+	addPending: function(rc_key,lock,cleanupfunc){
+		if(!this._map[rc_key]){
+			throw Error('PoolManager::addPending: RC '+rc_key+" is not registered");
+		}
+		var assignedid=this.pendingID--;
+		this.pending.add(assignedid,this._map[rc_key],lock,cleanupfunc);
+		if(lock){
+			var la=this._pendinglocks[rc_key];
+			if(!la){
+				this._pendinglocks[rc_key]=la=[];
+			}
+			la.push(lock);
+		}
+		return assignedid;
+	},
 	getSession: function(session_id){
 		return this.sessions.get(session_id);
 	},
@@ -235,7 +235,7 @@ PoolManager.prototype={
 		var s=this.sessions.remove(session_id);
 		if(s){
 			if(s.lock){
-                var la=this._locks[s.rc.rc_key];
+				var la=this._locks[s.rc.rc_key];
 				if(la){
 					var i=la.indexOf(s.lock);
 					if(i>=0){
@@ -248,21 +248,21 @@ PoolManager.prototype={
 		return s;
 	},
 	removePending: function(session_id){
-        sys.log('removePending: '+session_id);
-        var s=this.pending.remove(session_id);
-        if(s){
-            if(s.lock){
-                var la=this._pendinglocks[s.rc.rc_key];
-                if(la){
-                    var i=la.indexOf(s.lock);
-                    if(i>=0){
-                        la.splice(i,1);
-                    }
-                }
-            }
-        }
-        return s;
-    },
+		sys.log('removePending: '+session_id);
+		var s=this.pending.remove(session_id);
+		if(s){
+			if(s.lock){
+				var la=this._pendinglocks[s.rc.rc_key];
+				if(la){
+					var i=la.indexOf(s.lock);
+					if(i>=0){
+						la.splice(i,1);
+					}
+				}
+			}
+		}
+		return s;
+	},
 	closeSession: function(session_id){
 		var session=this.getSession(session_id);
 		if(!session){
@@ -277,21 +277,21 @@ PoolManager.prototype={
 }
 
 var RCScheduleQueue=function(){
-    this._queue=[];
+	this._queue=[];
 }
 RCScheduleQueue.prototype={
-    add: function(/*Function*/o){
-        this._queue.push(o);
-    },
-    run: function(){
-        var i=0,it, q=this._queue;
-        this._queue=[];
-        while((it=q[i++])){
-            try{
-                it();
-            }catch(e){
-                sys.log("RCScheduleQueue::run: ERROR "+e.message);
-            }
-        }
-    }
+	add: function(/*Function*/o){
+		this._queue.push(o);
+	},
+	run: function(){
+		var i=0,it, q=this._queue;
+		this._queue=[];
+		while((it=q[i++])){
+			try{
+				it();
+			}catch(e){
+				sys.log("RCScheduleQueue::run: ERROR "+e.message);
+			}
+		}
+	}
 }

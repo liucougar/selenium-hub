@@ -46,9 +46,9 @@ function _checkClientDriverReq(req, reqobj, res){
 	}
 	
 	var rc, retryhandler=function(){
-        _checkClientDriverReq(req, reqobj, res);
-    };
-    
+		_checkClientDriverReq(req, reqobj, res);
+	};
+	
 	if(reqobj && !reqobj.rc){
 		var args=_getArgs(req, reqobj.data);
 		sys.log('ClientDriver Request: '+(args.sessionId||'')+' '+args.cmd);
@@ -60,7 +60,7 @@ function _checkClientDriverReq(req, reqobj, res){
 				rc=pool.getRC(args['1'],reqobj._rclock);
 				reqobj._noWait=args['noWait'];
 				if(rc){
-                    reqobj.tempSessionID=pool.addPending(rc.rc_key,reqobj._rclock,_closeSession);
+					reqobj.tempSessionID=pool.addPending(rc.rc_key,reqobj._rclock,_closeSession);
 					sys.log("Assign RC "+rc.rc_key+" "+(reqobj._rclock||""));
 				}
 				// sys.puts('getNewBrowserSession '+args['1']+" "+client);
@@ -90,7 +90,7 @@ function _checkClientDriverReq(req, reqobj, res){
 				simpleText(res, 404,"ERROR, no selenium-rc available");
 			}else{
 				//retry after 1 second
-                pool.scheduler.add(retryhandler);
+				pool.scheduler.add(retryhandler);
 			}
 			return;
 		}
@@ -115,12 +115,12 @@ function _checkClientDriverReq(req, reqobj, res){
 		clearTimeout(timeout);
 	});
 	client.addListener("error",function(e){
-        //a client may trigger several error events, we only care about the first error
-        //because we create a new client each time
-        if(client._errorOccured){
-            return;
-        }
-        client._errorOccured=true;
+		//a client may trigger several error events, we only care about the first error
+		//because we create a new client each time
+		if(client._errorOccured){
+			return;
+		}
+		client._errorOccured=true;
 		sys.puts("Can't connect to "+rc.rc_key+" with Error "+e.message+" ("+e.errno+")");
 		if(!rc._retry){
 			rc._retry=0;
@@ -129,23 +129,23 @@ function _checkClientDriverReq(req, reqobj, res){
 		if(rc._retry>=config.global.get("connectRCErrorRetry")){
 			sys.puts("Mark RC "+rc.rc_key+" as unavailable");
 			pool.markAs(rc,0);
-            if(reqobj.tempSessionID){
-                pool.removePending(reqobj.tempSessionID);
-                delete reqobj.tempSessionID;
-            }
+			if(reqobj.tempSessionID){
+				pool.removePending(reqobj.tempSessionID);
+				delete reqobj.tempSessionID;
+			}
 			//pool.clear(rc,reqobj._rclock);
-            //try to find a new RC if user is requesting for a new browser session
-            if(reqobj.args && reqobj.args.cmd=='getNewBrowserSession'){
-                reqobj.rc=null;
-                pool.scheduler.add(retryhandler);
-            }else{
-                res.writeHead(200);
-                res.write("ERROR,connect to RC on "+rc.rd_key+" is lost.");
-                res.end();
-            }
+			//try to find a new RC if user is requesting for a new browser session
+			if(reqobj.args && reqobj.args.cmd=='getNewBrowserSession'){
+				reqobj.rc=null;
+				pool.scheduler.add(retryhandler);
+			}else{
+				res.writeHead(200);
+				res.write("ERROR,connect to RC on "+rc.rd_key+" is lost.");
+				res.end();
+			}
 		}else{
 			sys.puts("Try to reconnect (attempt "+rc._retry+")");
-            setTimeout(retryhandler,config.global.get("connectRCErrorRetryInterval"));
+			setTimeout(retryhandler,config.global.get("connectRCErrorRetryInterval"));
 		}
 	});
 	request.addListener("response", function (response) {
@@ -175,42 +175,42 @@ function _parseRCResult(data){
 }
 
 function _sendSeleniumCmd(callback,host,port,kwargs,args){
-    var data=_preparePostContent(kwargs,args);
-    var client=http.createClient(port,host),
-      request=client.request('POST', "/selenium-server/driver/",{"host":host+":"+port,"accept-encoding":"identity","content-length":data.length,"content-type":"application/x-www-form-urlencoded; charset=utf-8"});
-    request.addListener("response",function(response){
-        var result="";
-        response.addListener("data",function(d){
-            result+=d;
-        });
-        response.addListener("end",function(){
-            client.end();
-            if(callback){
-                callback(result,response);
-            }
-        });
-    });
-    //sys.puts('closeSession '+data+" "+data.length);
-    request.write(data);
-    request.end();
+	var data=_preparePostContent(kwargs,args);
+	var client=http.createClient(port,host),
+	  request=client.request('POST', "/selenium-server/driver/",{"host":host+":"+port,"accept-encoding":"identity","content-length":data.length,"content-type":"application/x-www-form-urlencoded; charset=utf-8"});
+	request.addListener("response",function(response){
+		var result="";
+		response.addListener("data",function(d){
+			result+=d;
+		});
+		response.addListener("end",function(){
+			client.end();
+			if(callback){
+				callback(result,response);
+			}
+		});
+	});
+	//sys.puts('closeSession '+data+" "+data.length);
+	request.write(data);
+	request.end();
 }
 function _preparePostContent(kwargs,args){
-    var data="",o={};
-    for(var i in kwargs){
-        o[i]=kwargs[i];
-    }
-    if(args){
-        args.forEach(function(v,i){
-            o[i]=v;
-        });
-    }
-    return querystring.stringify(o);
+	var data="",o={};
+	for(var i in kwargs){
+		o[i]=kwargs[i];
+	}
+	if(args){
+		args.forEach(function(v,i){
+			o[i]=v;
+		});
+	}
+	return querystring.stringify(o);
 }
 
 //this function will be called with this as the session object
 function _closeSession(callback){
-    var rc=this.rc;
-    _sendSeleniumCmd(callback,rc.host,rc.port,{cmd:'testComplete',sessionId:this.id});
+	var rc=this.rc;
+	_sendSeleniumCmd(callback,rc.host,rc.port,{cmd:'testComplete',sessionId:this.id});
 }
 
 function _inspectRCResponse(/*resp from RC*/response,/*body of the response data*/resdata,
@@ -219,9 +219,9 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 
 	//sometimes, some commands would return lower case ok, let's convert them to upper case OK
 	if(resdata.substr(0,2)=="ok"){
-        sys.log('ok response, treated as OK');
-        resdata="OK"+resdata.substr(2);
-    }
+		sys.log('ok response, treated as OK');
+		resdata="OK"+resdata.substr(2);
+	}
 	if(!resdata.length){
 		sys.log('Empty response, treated as OK');
 		resdata='OK';
@@ -231,28 +231,28 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 			case 'getNewBrowserSession':
 				try{
 					var sId=_parseRCResult(resdata);
-                    if(reqobj.tempSessionID){
-                        pool.removePending(reqobj.tempSessionID);
-                        delete reqobj.tempSessionID;
-                    }
+					if(reqobj.tempSessionID){
+						pool.removePending(reqobj.tempSessionID);
+						delete reqobj.tempSessionID;
+					}
 					pool.addSession(sId,reqobj.rc.rc_key,reqobj._rclock,_closeSession);
 					reqobj.sessionId=sId;
-                    sys.log('getNewBrowserSession '+sId);
-                    
-//                     if(reqobj._rclock=='focus'){
-//                         //send a windowFocus command automatically
-//                         _sendSeleniumCmd(function(data,windowFocusResp){
-//                             if(data!='OK'){
-//                                 pool.closeSession(sId);
-//                                 res.writeHead(windowFocusResp.statusCode, windowFocusResp.headers);
-//                                 res.write("ERROR: windowFocus "+data);
-//                                 res.end();
-//                             }else{
-//                                 _sendResponseToClientDriver(req,reqobj,response,res,resdata);
-//                             }
-//                         },reqobj.rc.host,reqobj.rc.port,{cmd:'runScript',sessionId:sId,"1":"window.focus();"});
-//                         return;
-//                     }
+					sys.log('getNewBrowserSession '+sId);
+					
+//					 if(reqobj._rclock=='focus'){
+//						 //send a windowFocus command automatically
+//						 _sendSeleniumCmd(function(data,windowFocusResp){
+//							 if(data!='OK'){
+//								 pool.closeSession(sId);
+//								 res.writeHead(windowFocusResp.statusCode, windowFocusResp.headers);
+//								 res.write("ERROR: windowFocus "+data);
+//								 res.end();
+//							 }else{
+//								 _sendResponseToClientDriver(req,reqobj,response,res,resdata);
+//							 }
+//						 },reqobj.rc.host,reqobj.rc.port,{cmd:'runScript',sessionId:sId,"1":"window.focus();"});
+//						 return;
+//					 }
 				}catch(e){
 					sys.log('getNewBrowserSession failed '+e.message);
 				}
