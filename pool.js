@@ -5,8 +5,21 @@ var SessionManager=function(pool){
 	this._pool=pool;
 }
 SessionManager.prototype={
-	get: function(id){
-		return this._sessions[id];
+	get: function(arg){
+        if(arg.rc_key){
+            //return all sessions IDs on RC specified by rc_key
+            var i=0,s,r=[];
+            for(i in this._sessions){
+                s=this._sessions[i];
+                if(s.rc.rc_key==arg.rc_key){
+                    r.push(s.id);
+                }
+            }
+            return r;
+        }else{
+            //arg is an ID of a session
+            return this._sessions[arg];
+        }
 	},
 	add: function(id,rc,lock,cleanupfunc){
 		this._sessions[id]={id:id,rc:rc,lock:lock,lastChecked:+new Date,cleanup:cleanupfunc};
@@ -115,6 +128,13 @@ PoolManager.prototype={
         if((this._locks[k] && this._locks[k].indexOf("focus")>=0) ||
           (this._pendinglocks[k] && this._pendinglocks[k].indexOf("focus")>=0)){
             return true;
+        }
+        //in addition, if a RC has at least one active browser session running,
+        //this RC can't handle "focus" lock
+        if(lock=='focus'){
+            if(pool.sessions.get({rc_key:rc.rc_key}).length || pool.pending.get({rc_key:rc.rc_key}).length){
+                return true;
+            }
         }
         if(!lock || 
            ( (!this._locks[k] || this._locks[k].indexOf(lock)<0) &&
