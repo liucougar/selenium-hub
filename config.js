@@ -2,10 +2,9 @@ var fs=require('fs'),sys=require('sys');
 
 var FileConfig=function(file,options){
 	options=options||{};
-	var content=fs.readFileSync(file);
-	this.loaded=content=JSON.parse(content);
-	//this.docs={};
-	
+	var content=fs.readFileSync(file, "utf8");
+	content=JSON.parse(content);
+	this.loaded=content;
 	// for(var i in content){
 		// if(i.slice(-8)=='.__doc__'){
 			// Object.defineProperty(content,i,{value:content[i],enumerable:false,configurable:true});
