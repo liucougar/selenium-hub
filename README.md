@@ -12,6 +12,14 @@ FEATURES
   * special RC lock "focus": if focus lock is requested from a client driver, it will only be fullfiled by a RC without any active browser session. In addition, no other browser session will be assigned to this RC until the browser session with "focus" lock terminates. This special lock is useful for tests which require focus on the browser (such as those using [dojo.robot])
   * automatically close browser sessions if they are not being used for a given timeout
 
+USAGE
+-----
+TODOC
+
+LICENSE
+-------
+BSD
+
 Failure Mode
 ------------
   * client driver fails: remove any registered sessions if any
@@ -21,6 +29,7 @@ Failure Mode
 
 TODO
 ----
+  * move config.json into config.js, add a config.example file
   * when exit, terminate all sessions
   * dynamic configuration change
   * web UI
