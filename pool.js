@@ -132,7 +132,7 @@ PoolManager.prototype={
 		//in addition, if a RC has at least one active browser session running,
 		//this RC can't handle "focus" lock
 		if(lock=='focus'){
-			if(pool.sessions.get({rc_key:rc.rc_key}).length || pool.pending.get({rc_key:rc.rc_key}).length){
+			if(this.sessions.get({rc_key:rc.rc_key}).length || this.pending.get({rc_key:rc.rc_key}).length){
 				return true;
 			}
 		}
