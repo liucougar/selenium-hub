@@ -179,7 +179,7 @@ PoolManager.prototype={
 		this._map[key]=obj;
 		obj.rc_key=key;
 		this.markAs(obj,1);
-		this.schedular.run();
+		this.scheduler.run();
 	},
 	remove: function(rc_key){
 		//remove all sessions associated with this RC
@@ -244,7 +244,7 @@ PoolManager.prototype={
 				}
 			}
 		}
-		this.schedular.run();
+		this.scheduler.run();
 		return s;
 	},
 	removePending: function(session_id){
