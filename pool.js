@@ -1,4 +1,4 @@
-var sys=require("sys"), http=require("http"), config=require("config");
+var sys=require("sys"), http=require("http"), config=require("./config");
 
 var SessionManager=function(pool){
 	this._sessions={};
