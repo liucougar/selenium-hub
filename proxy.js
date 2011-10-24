@@ -29,9 +29,11 @@ function _getArgs(req, data){
 }
 
 function simpleText(res, code, body) {
-	res.sendHeader(code, [ ["Content-Type", "text/plain"]
+	if(res.sendHeader){
+		res.sendHeader(code, [ ["Content-Type", "text/plain"]
 					   , ["Content-Length", body.length]
 					   ]);
+	}
 	res.write(body);
 	res.end();
 };
@@ -51,7 +53,7 @@ function _checkClientDriverReq(req, reqobj, res){
 	
 	if(reqobj && !reqobj.rc){
 		var args=_getArgs(req, reqobj.data);
-		sys.log('ClientDriver Request: '+(args.sessionId||'')+' '+args.cmd);
+		//sys.log('ClientDriver Request: '+(args.sessionId||'')+' '+args.cmd);
 
 		switch(args.cmd){
 			case 'getNewBrowserSession':
@@ -227,6 +229,9 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 		resdata='OK';
 	}
 	if(args){
+		if(resdata.substr(0,2)!=="OK"){
+			sys.log('ClientDriver Request: '+(args.sessionId||'')+' '+args.cmd+" failed");
+		}
 		switch(args.cmd){
 			case 'getNewBrowserSession':
 				try{
@@ -254,7 +259,7 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 //						 return;
 //					 }
 				}catch(e){
-					sys.log('getNewBrowserSession failed '+e.message);
+					sys.log('getNewBrowserSession failed '+e);
 				}
 				break;
 			case 'testComplete':
@@ -273,7 +278,7 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 function _sendResponseToClientDriver(req,reqobj,response,res,resdata){
 	if(req.connection.readyState!='open'){
 		//the client driver dropped, let's discard any session it was using
-		sys.puts('Client driver droped: stop processing request "'+req.url+'" with POST data "'+reqobj.data+'"');
+		sys.log('Client driver droped: stop processing request "'+req.url+'" with POST data "'+reqobj.data+'"');
 		if(reqobj.sessionId){
 			pool.closeSession(reqobj.sessionId);
 		}
