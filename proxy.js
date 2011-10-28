@@ -276,7 +276,7 @@ function _inspectRCResponse(/*resp from RC*/response,/*body of the response data
 }
 
 function _sendResponseToClientDriver(req,reqobj,response,res,resdata){
-	if(req.connection.readyState!='open'){
+	if(req.connection.readyState!='open' || !res.connection){
 		//the client driver dropped, let's discard any session it was using
 		sys.log('Client driver droped: stop processing request "'+req.url+'" with POST data "'+reqobj.data+'"');
 		if(reqobj.sessionId){
@@ -290,5 +290,8 @@ function _sendResponseToClientDriver(req,reqobj,response,res,resdata){
 		res.writeHead(response.statusCode, response.headers);
 		res.write(resdata);
 	}
-	res.end();
+	
+	if(res.connection){
+		res.end();
+	}
 }
