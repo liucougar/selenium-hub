@@ -131,10 +131,6 @@ function _checkClientDriverReq(req, reqobj, res){
 		if(rc._retry>=config.global.get("connectRCErrorRetry")){
 			sys.puts("Mark RC "+rc.rc_key+" as unavailable");
 			pool.markAs(rc,0);
-			if(reqobj.tempSessionID){
-				pool.removePending(reqobj.tempSessionID);
-				delete reqobj.tempSessionID;
-			}
 			//pool.clear(rc,reqobj._rclock);
 			//try to find a new RC if user is requesting for a new browser session
 			if(reqobj.args && reqobj.args.cmd=='getNewBrowserSession'){
@@ -144,6 +140,12 @@ function _checkClientDriverReq(req, reqobj, res){
 				res.writeHead(200);
 				res.write("ERROR,connect to RC on "+rc.rd_key+" is lost.");
 				res.end();
+			}
+			//rmovePending after retryhandler is added to scheduler, so that 
+			//scheduled handlers will be executed
+			if(reqobj.tempSessionID){
+				pool.removePending(reqobj.tempSessionID);
+				delete reqobj.tempSessionID;
 			}
 		}else{
 			sys.puts("Try to reconnect (attempt "+rc._retry+")");

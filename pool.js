@@ -261,6 +261,10 @@ PoolManager.prototype={
 				}
 			}
 		}
+		//check whether we have any pending tasks
+		//setTimeout(function(){
+			this.scheduler.run();
+		//}, 10);
 		return s;
 	},
 	closeSession: function(session_id){
